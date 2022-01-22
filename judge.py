@@ -3,8 +3,6 @@ from enum import Enum
 from collections import Counter
 from random import choice
 import re
-from xmlrpc.client import Boolean
-
 from unidecode import unidecode
 
 class Result(Enum):
@@ -62,7 +60,7 @@ def print_position(last_guess : list[Result]) -> None:
 def has_ended(guess : list[Result]) -> bool:
     return all(letter_result == Result.OK for letter_result in guess)
 
-def play_game(word : str, max_rounds : int) -> tuple[Boolean, Game]:
+def play_game(word : str, max_rounds : int) -> tuple[bool, Game]:
     game = Game(word)
 
     round_num = 0
@@ -100,8 +98,7 @@ def main():
     word_len = 5
     max_rounds = 6
 
-    words = (word for word in wordlist if len(word) == word_len)
-    words = (word for word in words if re.search(r'[^A-Z]', word) is None)
+    words = (word for word in wordlist if len(word) == word_len and re.search(r'[^A-Z]', word) is None)
 
     selected_word = choice(list(words))
     print(selected_word)
