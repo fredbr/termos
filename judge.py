@@ -13,8 +13,8 @@ class Result(Enum):
     OK = 2
 
 class Game:
-    def __init__(self, cur_word : str):
-        self.__cur_word = cur_word
+    def __init__(self, word : str):
+        self.__word = word
         self.__guesses_results = []
 
     def __iter__(self):
@@ -22,27 +22,27 @@ class Game:
             yield(game)
     
     @staticmethod
-    def eval_position(cur_guess : str, cur_word : str) -> list[Result]:
+    def eval_position(guess : str, word : str) -> list[Result]:
         result = [
                 Result.OK if cur_letter == correct_letter else Result.FAIL 
-            for cur_letter, correct_letter in zip(cur_guess, cur_word)
+            for cur_letter, correct_letter in zip(guess, word)
         ]
 
-        non_corrects = filter(
-            letter if res_pos != Result.OK else None for res_pos, letter in zip(result, cur_guess)
+        non_corrects = (
+            (letter for res_pos, letter in zip(result, word) if res_pos != Result.OK)
         )
 
         letter_counter = Counter(non_corrects)
-
-        for idx, letter in enumerate(cur_guess):
-            if letter_counter[letter] > 0:
+        
+        for idx, letter in enumerate(guess):
+            if result[idx] != Result.OK and letter_counter[letter] > 0:
                 letter_counter[letter] -= 1
                 result[idx] = Result.OK_LETTER
 
         return result
 
-    def eval_guess(self, cur_guess : str) -> None:
-        next_guess = self.eval_position(cur_guess, self.__cur_word)
+    def eval_guess(self, guess : str) -> None:
+        next_guess = self.eval_position(guess, self.__word)
 
         self.__guesses_results.append(next_guess)
 
@@ -50,7 +50,7 @@ class Game:
 
 
 def print_position(last_guess : list[Result]) -> None:
-    for letter_result in range(last_guess):
+    for letter_result in last_guess:
         match letter_result:
             case Result.OK:
                 print('O', end='')
@@ -62,9 +62,7 @@ def print_position(last_guess : list[Result]) -> None:
 def has_ended(guess : list[Result]) -> bool:
     return all(letter_result == Result.OK for letter_result in guess)
 
-def play_game(wordlist : list[str], word_len : int, max_rounds : int) -> tuple[Boolean, Game]:
-    word = choice(filter(lambda word: len(word) == word_len, wordlist))
-
+def play_game(word : str, max_rounds : int) -> tuple[Boolean, Game]:
     game = Game(word)
 
     round_num = 0
@@ -75,16 +73,16 @@ def play_game(wordlist : list[str], word_len : int, max_rounds : int) -> tuple[B
             print('\nOnly one word per line!\n')
             continue
 
-        guess_word = unidecode(guess_word)
+        guess_word = unidecode(guess_word).upper()
 
-        if len(guess_word) != word_len:
-            print(f'\The word needs to have {word_len} letters!\n')
+        if len(guess_word) != len(word):
+            print(f'\The word needs to have {len(word)} letters!\n')
             continue 
         
         round_result = game.eval_guess(guess_word)
 
         print_position(round_result)
-        print()
+        print('\n')
 
         if has_ended(round_result):
             return True, game
@@ -100,10 +98,15 @@ def main():
         wordlist = [line.rstrip() for line in dist_lines.readlines()]
 
     word_len = 5
+    max_rounds = 6
 
+    words = (word for word in wordlist if len(word) == word_len)
+    words = (word for word in words if re.search(r'[^A-Z]', word) is None)
 
+    selected_word = choice(list(words))
+    print(selected_word)
 
-    pass
+    play_game(selected_word, max_rounds)
 
 if __name__ == '__main__':
     main()
