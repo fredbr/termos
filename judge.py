@@ -101,7 +101,7 @@ def main():
     word_len = 5
     max_rounds = 8
 
-    dictionary = list(word.upper() for word in wordlist if len(word) == word_len and re.search(r'[^A-Z]', word) is None)
+    dictionary = list(word.upper() for word in wordlist if len(word) == word_len and re.search(r'\W', word) is None)
 
     selected_word = choice(dictionary)
 
