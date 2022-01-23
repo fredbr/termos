@@ -13,12 +13,11 @@ class Result(Enum):
 class Game:
     def __init__(self, word : str):
         self.__word = word
-        self.__guesses_results = []
+        self.__guesses_results : list[list[Result]] = []
 
-    def __iter__(self):
-        for game in self.__guesses_results:
-            yield(game)
-    
+    def results(self) -> list[list[Result]]:
+        return self.__guesses_results
+
     @staticmethod
     def eval_position(guess : str, word : str) -> list[Result]:
         result = [
@@ -60,7 +59,7 @@ def print_position(last_guess : list[Result]) -> None:
 def has_ended(guess : list[Result]) -> bool:
     return all(letter_result == Result.OK for letter_result in guess)
 
-def play_game(word : str, max_rounds : int) -> tuple[bool, Game]:
+def play_game(dictionary : frozenset[str], word : str, max_rounds : int) -> tuple[bool, Game]:
     game = Game(word)
 
     round_num = 0
@@ -74,8 +73,12 @@ def play_game(word : str, max_rounds : int) -> tuple[bool, Game]:
         guess_word = unidecode(guess_word).upper()
 
         if len(guess_word) != len(word):
-            print(f'\The word needs to have {len(word)} letters!\n')
-            continue 
+            print(f'\nThe word needs to have {len(word)} letters!\n')
+            continue
+
+        if guess_word not in dictionary:
+            print('\nInvalid word!\n')
+            continue
         
         round_result = game.eval_guess(guess_word)
 
@@ -96,14 +99,23 @@ def main():
         wordlist = [line.rstrip() for line in dist_lines.readlines()]
 
     word_len = 5
-    max_rounds = 6
+    max_rounds = 8
 
-    words = (word for word in wordlist if len(word) == word_len and re.search(r'[^A-Z]', word) is None)
+    dictionary = list(word.upper() for word in wordlist if len(word) == word_len and re.search(r'[^A-Z]', word) is None)
 
-    selected_word = choice(list(words))
-    print(selected_word)
+    selected_word = choice(dictionary)
 
-    play_game(selected_word, max_rounds)
+    status, game = play_game(frozenset(dictionary), selected_word, max_rounds)
+
+    if not status:
+        print(f'You lost in {max_rounds} rounds!\n')
+    else:
+        print(f'You won in {len(game.results())} round!\n')
+
+    print('Your game:\n')
+    for round in game.results():
+        print_position(round)
+        print()
 
 if __name__ == '__main__':
     main()
